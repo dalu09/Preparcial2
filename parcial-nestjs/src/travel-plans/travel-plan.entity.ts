@@ -1,10 +1,4 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  CreateDateColumn,
-} from 'typeorm';
+import {Entity,PrimaryGeneratedColumn,Column,ManyToOne,CreateDateColumn,} from 'typeorm';
 import { Country } from '../countries/country.entity';
 
 @Entity()
@@ -14,9 +8,6 @@ export class TravelPlan {
 
   @Column()
   countryCode: string;
-
-  @ManyToOne(() => Country, { eager: true })
-  country: Country;
 
   @Column()
   title: string;
@@ -32,4 +23,7 @@ export class TravelPlan {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @ManyToOne(() => Country, (country) => country.travelPlans, { eager: true })
+  country: Country;
 }

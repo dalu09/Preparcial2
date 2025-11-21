@@ -1,4 +1,5 @@
-import { Entity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { TravelPlan } from '../travel-plans/travel-plan.entity';
 
 @Entity()
 export class Country {
@@ -28,4 +29,7 @@ export class Country {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @OneToMany(() => TravelPlan, (plan) => plan.country)
+  travelPlans: TravelPlan[];
 }

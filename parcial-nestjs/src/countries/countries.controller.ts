@@ -25,8 +25,4 @@ export class CountriesController {
     return this.countriesService.update(code, body);
   }
 
-  @Delete(':code')
-  remove(@Param('code') code: string) {
-    return this.countriesService.remove(code);
-  }
 }

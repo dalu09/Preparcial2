@@ -11,15 +11,31 @@ async function bootstrap() {
 
   console.log('🌱 Seeding database...');
 
-  const seedCountries = ['COL', 'USA', 'FRA', 'JPN'];
+  const seedCountries = ['COL', 'USA', 'FRA', 'JPN', 'ESP']; 
 
   for (const code of seedCountries) {
-    console.log(`Fetching country ${code}...`);
-    await countriesService.findByCode(code); // usa la API externa si no está en cache
-  }
+  console.log(`Fetching country ${code}...`);
+  try {
+  await countriesService.findByCode(code);
+} catch (err) {
+  console.log(`Country ${code} not found in API, creating manually...`);
+  await countriesService.create({
+    code,
+    name: code === 'ESP' ? 'España' : code,
+    region: 'Europe',
+    subregion: 'Southern Europe',
+    capital: 'Madrid',
+    population: 47000000,
+    flagUrl: 'https://flagcdn.com/es.svg',
+  });
+}
+
+}
+
 
   console.log('🌱 Adding sample Travel Plans...');
 
+  // Planes asociados a COL y USA (no se podrán borrar)
   await travelPlansService.create({
     countryCode: 'COL',
     title: 'Viaje a Bogotá',
@@ -36,6 +52,11 @@ async function bootstrap() {
   });
 
   console.log('🌱 Seed completed!');
+
+  // Mostrar todos los países para verificar
+  const allCountries = await countriesService.findAll();
+  console.log('Countries in DB:', allCountries.map(c => c.code));
+
   await app.close();
 }
 

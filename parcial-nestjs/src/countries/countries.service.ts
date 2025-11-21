@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Country } from './country.entity';
@@ -22,10 +22,7 @@ export class CountriesService {
     const codeUpper = code.toUpperCase();
 
     const cached = await this.countryRepo.findOne({ where: { code: codeUpper } });
-
-    if (cached) {
-      return { source: 'cache', data: cached };
-    }
+    if (cached) return { source: 'cache', data: cached };
 
     const external = await this.api.getCountryByCode(codeUpper);
     if (!external) {
@@ -36,13 +33,11 @@ export class CountriesService {
     return { source: 'api', data: saved };
   }
 
-
   async create(countryData: Partial<Country>) {
     const country = this.countryRepo.create({
       ...countryData,
       code: countryData.code?.toUpperCase(),
     });
-
     return this.countryRepo.save(country);
   }
 
@@ -51,21 +46,34 @@ export class CountriesService {
       where: { code: code.toUpperCase() },
     });
 
-    if (!country) {
-      throw new NotFoundException(`Country ${code} not found`);
-    }
+    if (!country) throw new NotFoundException(`Country ${code} not found`);
 
     Object.assign(country, updateData);
     return this.countryRepo.save(country);
   }
 
-  async remove(code: string) {
-    const result = await this.countryRepo.delete(code.toUpperCase());
+  /**
+   * Borrado protegido: solo permite borrar si no hay travel plans asociados
+   */
+  async deleteCountry(alpha3: string) {
+    const code = alpha3.toUpperCase();
 
-    if (result.affected === 0) {
+    const country = await this.countryRepo.findOne({
+      where: { code },
+      relations: ['travelPlans'],
+    });
+
+    if (!country) {
       throw new NotFoundException(`Country ${code} not found`);
     }
 
+    if (country.travelPlans && country.travelPlans.length > 0) {
+      throw new BadRequestException(
+        `Cannot delete ${code} because there are travel plans associated`,
+      );
+    }
+
+    await this.countryRepo.remove(country);
     return { deleted: true };
   }
 }
