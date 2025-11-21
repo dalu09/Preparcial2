@@ -4,7 +4,7 @@ import { TravelPlan } from '../travel-plans/travel-plan.entity';
 @Entity()
 export class Country {
   @PrimaryColumn()
-  code: string; // Alpha-3 (COL, FRA, etc.)
+  code: string; 
 
   @Column()
   name: string;
