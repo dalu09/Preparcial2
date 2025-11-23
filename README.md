@@ -1,4 +1,4 @@
-# Preparcial 2
+# Parcial 2
 
 Este proyecto implementa una API REST construida con NestJS, conectada a una base de datos relacional mediante TypeORM. La API administra información de países y planes de viaje, integrándose además con el proveedor externo RestCountries para obtener datos actualizados de países.
 
