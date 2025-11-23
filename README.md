@@ -14,81 +14,56 @@ Este proyecto implementa una API REST construida con NestJS, conectada a una bas
 ```bash
 npm i -g @nestjs/cli
 ```
-
-### 2. Instalación
+### 2. Ejecutar la API
 ```bash
-git clone <URL_DEL_REPO>
-cd <NOMBRE_DEL_PROYECTO>
-npm install
+cd parcial-nestjs
 ```
-### 3. Configuración de la base de datos
-Crear la base de datos:
-
-```bash
-sql
-CREATE DATABASE travelplanner;
-Configurar variables en .env:
-```
-
-```bash
-env
-Copiar código
-DB_HOST=localhost
-DB_PORT=5432
-DB_USERNAME=postgres
-DB_PASSWORD=tu_password
-DB_DATABASE=travelplanner
-RESTCOUNTRIES_URL=https://restcountries.com/v3.1
-```
-### 4. Ejecutar la API
 ```bash
 npm run start:dev
 ```
-### 5.Descripción de la API
+La API estará disponible en:
+```bash
+http://localhost:3000
+```
+### 3.Descripción de la API
 #### 1. Módulos
 * Countries:
-  -Obtiene información de países.
-  -Integra RestCountries.
-  -Implementa caché local.
+  - Maneja información de países.
+  - Usa caché local en la base de datos.
+  - Consume la API oficial RestCountries
+  - Implementa borrado protegido mediante Guard.
+  - Expone CRUD parcial (GET, GET by ID, DELETE protegido).
 
-*TravelPlans:
-  -Crea y gestiona planes de viaje.
-  -Cada plan pertenece a un país.
+* TravelPlans:
+  - Crea y gestiona planes de viaje.
+  - Cada plan pertenece a un país.
 
-### 6. Documentación de Endpoints
+### 4. Documentación de Endpoints
 #### Countries:
--GET /countries -> Retorna todos los países almacenados.
-
--GET /countries/:code -> Busca un país por su código ISO. Si no está en la base de datos, se consulta en RestCountries y se guarda.
-
-#### Ejemplo: 
-
-Crea un plan de viaje.
+- GET /countries -> Retorna todos los países almacenados.
 ``` bash
-curl http://localhost:3000/countries/CO
-TravelPlans
-POST /travel-plans
+curl http://localhost:3000/countries/COL
 ```
-Devuelve todos los planes registrados.
+- GET /countries/:code -> Busca un país por su código ISO. Si no está en la base de datos, se consulta en RestCountries y se guarda.
+- DELETE /countries/:code -> Borrado protegido. Requiere header x-auth-token: secret123; si el país no existe devuelve 404, si tiene TravelPlans asociados devuelve 409 Conflict y solo se elimina si cumple todas las condiciones.
+
+#### Travel plans
+- POST /travel-plans -> Crea un plan de viaje nuevo. Valida que exista el país (si no existe: se descarga primero desde RestCountries).
 ``` bash
 curl -X POST http://localhost:3000/travel-plans \
   -H "Content-Type: application/json" \
   -d '{
-    "countryCode": "CO",
-    "title": "Vacaciones en Colombia",
-    "description": "Visita a Medellín y Cartagena",
+    "countryCode": "COL",
+    "title": "Viaje a Bogotá",
     "startDate": "2025-01-10",
-    "endDate": "2025-01-20"
+    "endDate": "2025-01-15",
+    "notes": "Plan corto"
   }'
-GET /travel-plans
 ```
-Retorna el detalle de un plan.
-``` bash
-GET /travel-plans/:id
-```
+- GET /travel-plans -> Lista todos los planes.
+- GET /travel-plans/:id -> Retorna un plan específico.
 
-
-### 7. Explicación del Provider Externo (RestCountries)
+### 5. Explicación del Provider Externo (RestCountries)
 El flujo del provider es:
   1. El usuario consulta un país por código.
   2. Se revisa si existe en la base de datos.
@@ -99,15 +74,45 @@ El flujo del provider es:
   4. Se mapea la respuesta.
   5. Se almacena en la base de datos como caché local.
 
-### 8. Pruebas Básicas Sugeridas
+### 6. Middleware de Logging (Parcial)
+Se aplica a:
+- /countries
+- /travel-plans
+
+Registra:
+- Método HTTP
+- Ruta
+- Código de respuesta
+- Tiempo total de la petición
+
+Ejemplo de consola:
+``` bash
+[LOG] GET /countries - 200 - 12ms
+```
+### 7. Seed del sistema
+Ejecuta:
+``` bash
+npm run seed
+```
+Esto descarga países: COL, USA, FRA, JPN e inserta planes de viaje de ejemplo
+
+### 7. Pruebas Básicas Sugeridas
 #### 1. Consultar un país no cacheado
 ``` bash
-GET /countries/JP
+GET /countries/ISL
 ``` 
 Esperado: se consulta en RestCountries y se guarda en la base de datos.
 
 #### 2. Consultar un país cacheado
 ``` bash
-GET /countries/JP
+GET /countries/ISL
 ``` 
-Esperado: se retorna desde la base de datos sin hacer solicitud externa.
+Esperado: Retorna desde SQLite sin llamar al API externo.
+#### 3. Borrado protegido
+``` bash
+curl -X DELETE http://localhost:3000/countries/COL \
+  -H "x-auth-token: secret123"
+```
+#### 4. Middleware visible
+Consultar cualquier endpoint:
+→ Imprime logs en consola.
